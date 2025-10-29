@@ -26,4 +26,11 @@ public class MathServiceMoreTests
         Assert.Equal(x, svc.Add(zero, x));
         Assert.Equal(x, svc.Add(x, zero));
     }
+
+    [Fact(DisplayName = "Intentional failure to test PR triage"), Trait("Category", "IntentionalFail")]
+    public void This_Should_Always_Fail()
+    {
+        // This fails on purpose to drive the "requires updates" label.
+        Assert.True(false, "Intentional failure for CI/PR triage validation.");
+    }
 }
