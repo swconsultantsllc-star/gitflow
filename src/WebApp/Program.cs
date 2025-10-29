@@ -1,18 +1,15 @@
-using Microsoft.Extensions.DependencyInjection;
 using WebApp.Services;
+using Microsoft.AspNetCore.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();           // <- built-in
 builder.Services.AddSingleton<MathService>();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.MapOpenApi();                   // <- built-in
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
