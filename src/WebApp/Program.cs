@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using WebApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
