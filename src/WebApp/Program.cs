@@ -1,4 +1,5 @@
 using WebApp.Services;
+using Microsoft.OpenApi.Models; // not strictly required, but common
 
 var builder = WebApplication.CreateBuilder(args);
 
