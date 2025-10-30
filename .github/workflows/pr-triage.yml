@@ -2,15 +2,10 @@ name: PR Unit Test Eval
 
 on:
   workflow_run:
-<<<<<<< Updated upstream
-    workflows: ["unit-tests"]
-    types: [completed]
-=======
     workflows:
       - unit tests
     types:
       - completed
->>>>>>> Stashed changes
 
 permissions:
   contents: read
