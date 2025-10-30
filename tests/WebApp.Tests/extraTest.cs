@@ -19,7 +19,7 @@ public class MathServiceMoreTests
     [Theory]
     [InlineData(0, 0)]
     [InlineData(0, 7)]
-    [InlineData(0, -9)]
+    [InlineData(0, -8)]
     public void Add_ZeroIsIdentity(int zero, int x)
     {
         var svc = new MathService();
