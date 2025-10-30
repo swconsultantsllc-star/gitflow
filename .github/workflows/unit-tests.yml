@@ -1,13 +1,18 @@
-name: unit-tests
+name: unit tests + pr triage
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
-  build-and-test:
+  tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,6 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
+          # Change to '9.0.x' if your app targets net9.0
           dotnet-version: '9.0.x'
 
       - name: Restore
@@ -30,3 +36,93 @@ jobs:
 
       - name: Test
         run: dotnet test tests/WebApp.Tests/WebApp.Tests.csproj -c Release --no-build --collect "XPlat Code Coverage"
+
+  triage:
+    # Run this job even if tests fail; we'll inspect needs.tests.result
+    if: ${{ always() }}
+    needs: [tests]
+    runs-on: self-hosted   # or ubuntu-latest if you prefer GitHub-hosted
+    steps:
+      - name: Label / assign based on test outcome (Allman style)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            if (!pr)
+            {
+              core.info('No pull_request in context (e.g., manual dispatch). Nothing to do.');
+              return;
+            }
+
+            // Double-guard: only act on PRs targeting 'main'
+            if (pr.base?.ref !== 'main')
+            {
+              core.info(`PR #${pr.number} targets "${pr.base?.ref}", not "main". Skipping triage.`);
+              return;
+            }
+
+            // tests job result from this workflow run: 'success' | 'failure' | 'cancelled' | ...
+            const testResult = '${{ needs.tests.result }}';
+            const isSuccess = testResult === 'success';
+            const issue_number = pr.number;
+            const author = pr.user.login;
+
+            core.info(`Triage for PR #${issue_number}; tests result="${testResult}", author="@${author}"`);
+
+            async function safeRemoveLabel(name)
+            {
+              try
+              {
+                await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
+              }
+              catch (e)
+              {
+                if (e.status !== 404)
+                {
+                  core.warning(`removeLabel("${name}") error on #${issue_number}: ${e.message}`);
+                }
+              }
+            }
+
+            if (isSuccess)
+            {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ['ready for review']
+              });
+
+              await safeRemoveLabel('requires updates');
+              core.info(`Labeled #${issue_number} → "ready for review"`);
+            }
+            else
+            {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number,
+                labels: ['requires updates']
+              });
+
+              await safeRemoveLabel('ready for review');
+              core.info(`Labeled #${issue_number} → "requires updates"`);
+
+              // Try to (re)assign the author – may fail if not a collaborator (forks / policy)
+              try
+              {
+                await github.rest.issues.addAssignees({
+                  owner,
+                  repo,
+                  issue_number,
+                  assignees: [author]
+                });
+                core.info(`Assigned #${issue_number} to @${author}`);
+              }
+              catch (e)
+              {
+                core.warning(`Could not assign @${author} to #${issue_number}: ${e.message}`);
+              }
+            }
