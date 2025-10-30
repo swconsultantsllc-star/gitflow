@@ -41,7 +41,7 @@ jobs:
     # Run this job even if tests fail; we'll inspect needs.tests.result
     if: ${{ always() }}
     needs: [tests]
-    runs-on: self-hosted   # or ubuntu-latest if you prefer GitHub-hosted
+    runs-on: ubuntu-latest   # or ubuntu-latest if you prefer GitHub-hosted
     steps:
       - name: Label / assign based on test outcome (Allman style)
         uses: actions/github-script@v7
