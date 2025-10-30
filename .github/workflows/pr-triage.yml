@@ -2,7 +2,7 @@ name: PR Unit Test Eval
 
 on:
   workflow_run:
-    workflows: [ unit tests ]
+    workflows: [unit tests]
     types:
       - completed
 
